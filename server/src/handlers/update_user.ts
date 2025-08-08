@@ -1,18 +1,43 @@
+import { db } from '../db';
+import { usersTable } from '../db/schema';
 import { type UpdateUserInput, type User } from '../schema';
+import { eq } from 'drizzle-orm';
 
-export async function updateUser(input: UpdateUserInput): Promise<User> {
-  // This is a placeholder implementation! Real code should be implemented here.
-  // The goal of this handler is updating an existing user in the database.
-  // Should validate that the user exists and handle unique constraints.
-  return Promise.resolve({
-    id: input.id,
-    nik: input.nik || '',
-    name: input.name || '',
-    position: input.position || '',
-    unit: input.unit || '',
-    location: input.location || '',
-    user_type: input.user_type || 'user',
-    created_at: new Date(),
-    updated_at: new Date()
-  } as User);
-}
+export const updateUser = async (input: UpdateUserInput): Promise<User> => {
+  try {
+    // First, verify that the user exists
+    const existingUser = await db.select()
+      .from(usersTable)
+      .where(eq(usersTable.id, input.id))
+      .limit(1)
+      .execute();
+
+    if (existingUser.length === 0) {
+      throw new Error(`User with id ${input.id} not found`);
+    }
+
+    // Build update object with only provided fields
+    const updateData: any = {
+      updated_at: new Date()
+    };
+
+    if (input.nik !== undefined) updateData.nik = input.nik;
+    if (input.name !== undefined) updateData.name = input.name;
+    if (input.position !== undefined) updateData.position = input.position;
+    if (input.unit !== undefined) updateData.unit = input.unit;
+    if (input.location !== undefined) updateData.location = input.location;
+    if (input.user_type !== undefined) updateData.user_type = input.user_type;
+
+    // Update the user record
+    const result = await db.update(usersTable)
+      .set(updateData)
+      .where(eq(usersTable.id, input.id))
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('User update failed:', error);
+    throw error;
+  }
+};

@@ -1,30 +1,65 @@
+import { db } from '../db';
+import { notificationsTable, assetsTable } from '../db/schema';
 import { type Notification } from '../schema';
+import { eq, desc } from 'drizzle-orm';
 
 export async function getNotifications(): Promise<Notification[]> {
-  // This is a placeholder implementation! Real code should be implemented here.
-  // The goal of this handler is fetching all notifications from the database.
-  // Should order by created_at DESC to show newest notifications first.
-  // Should include related asset information when available.
-  return Promise.resolve([]);
+  try {
+    // Fetch all notifications ordered by created_at DESC to show newest first
+    const results = await db.select()
+      .from(notificationsTable)
+      .orderBy(desc(notificationsTable.created_at))
+      .execute();
+
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch notifications:', error);
+    throw error;
+  }
 }
 
 export async function getUnreadNotifications(): Promise<Notification[]> {
-  // This is a placeholder implementation! Real code should be implemented here.
-  // The goal of this handler is fetching only unread notifications.
-  // Should be used for notification badges and real-time updates.
-  return Promise.resolve([]);
+  try {
+    // Fetch only unread notifications ordered by created_at DESC
+    const results = await db.select()
+      .from(notificationsTable)
+      .where(eq(notificationsTable.is_read, false))
+      .orderBy(desc(notificationsTable.created_at))
+      .execute();
+
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch unread notifications:', error);
+    throw error;
+  }
 }
 
 export async function markNotificationAsRead(id: number): Promise<{ success: boolean }> {
-  // This is a placeholder implementation! Real code should be implemented here.
-  // The goal of this handler is marking a specific notification as read.
-  // Should update the is_read field to true for the given notification ID.
-  return Promise.resolve({ success: true });
+  try {
+    // Update the specific notification to mark as read
+    const result = await db.update(notificationsTable)
+      .set({ is_read: true })
+      .where(eq(notificationsTable.id, id))
+      .execute();
+
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to mark notification as read:', error);
+    throw error;
+  }
 }
 
 export async function markAllNotificationsAsRead(): Promise<{ success: boolean }> {
-  // This is a placeholder implementation! Real code should be implemented here.
-  // The goal of this handler is marking all notifications as read.
-  // Should update all unread notifications to read status.
-  return Promise.resolve({ success: true });
+  try {
+    // Update all unread notifications to read status
+    const result = await db.update(notificationsTable)
+      .set({ is_read: true })
+      .where(eq(notificationsTable.is_read, false))
+      .execute();
+
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to mark all notifications as read:', error);
+    throw error;
+  }
 }

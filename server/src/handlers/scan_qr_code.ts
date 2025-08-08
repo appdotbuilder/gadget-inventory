@@ -1,9 +1,26 @@
+import { db } from '../db';
+import { assetsTable } from '../db/schema';
 import { type QrCodeScanInput, type Asset } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export async function scanQrCode(input: QrCodeScanInput): Promise<Asset | null> {
-  // This is a placeholder implementation! Real code should be implemented here.
-  // The goal of this handler is finding an asset by its QR code.
-  // Should return the full asset details for the scanned QR code.
-  // Returns null if QR code is not found or invalid.
-  return Promise.resolve(null);
+  try {
+    // Query for asset with matching QR code
+    const results = await db.select()
+      .from(assetsTable)
+      .where(eq(assetsTable.qr_code, input.qr_code))
+      .limit(1)
+      .execute();
+
+    // Return null if no asset found
+    if (results.length === 0) {
+      return null;
+    }
+
+    // Return the asset data - no numeric fields to convert in this schema
+    return results[0];
+  } catch (error) {
+    console.error('QR code scan failed:', error);
+    throw error;
+  }
 }
